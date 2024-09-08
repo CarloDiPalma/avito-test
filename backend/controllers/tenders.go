@@ -3,6 +3,7 @@ package controllers
 import (
 	"ZADANIE-6105/models"
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -147,4 +148,56 @@ func GetTenderStatus(c *gin.Context) {
 
 	// Возвращение статуса тендера
 	c.JSON(http.StatusOK, tender.Status)
+}
+
+func UpdateTenderStatus(c *gin.Context) {
+	db, _ := c.Get("db")
+	database := db.(*gorm.DB)
+
+	// Получение идентификатора тендера из параметров запроса
+	tenderID := c.Param("tenderId")
+
+	// Получение обязательных query parameters
+	username := c.Query("username")
+	status := c.Query("status")
+
+	// Проверка, что обязательные параметры переданы
+	if username == "" || status == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and status are required"})
+		return
+	}
+
+	// Поиск тендера по идентификатору
+	var tender models.Tender
+	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Tender not found"})
+		return
+	}
+
+	// Проверка, что username соответствует создателю тендера
+	if tender.CreatorUsername != username {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized to update this tender"})
+		return
+	}
+
+	// Обновление статуса тендера
+	tender.Status = status
+	tender.UpdatedAt = time.Now()
+
+	// Сохранение обновленного тендера в базе данных
+	if err := database.Save(&tender).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender status"})
+		return
+	}
+
+	// Возвращение успешного ответа с обновленными данными тендера
+	c.JSON(http.StatusOK, gin.H{
+		"id":          tender.ID,
+		"name":        tender.Name,
+		"description": tender.Description,
+		"status":      tender.Status,
+		"serviceType": tender.ServiceType,
+		"version":     1, // Можно добавить логику версионирования, если необходимо
+		"createdAt":   tender.CreatedAt,
+	})
 }

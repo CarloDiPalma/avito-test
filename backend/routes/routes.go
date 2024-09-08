@@ -23,5 +23,6 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		api.POST("/employees/new", controllers.CreateEmployee)
 		api.PATCH("/api/tenders/:tenderId/edit", controllers.UpdateTender)
 		api.GET("/tenders/:tenderId/status", controllers.GetTenderStatus)
+		api.PUT("/tenders/:tenderId/status", controllers.UpdateTenderStatus)
 	}
 }
