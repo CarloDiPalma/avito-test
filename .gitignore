@@ -31,3 +31,4 @@ HELP.md
 
 ### ENV ###
 .env
+/backend/.env
