@@ -78,15 +78,17 @@ func (t *Tender) Validate() error {
 }
 
 type TenderHistory struct {
-	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
-	TenderID    uuid.UUID `json:"tenderId"` // Ссылка на основной тендер
-	Name        string    `json:"name"`
-	Description string    `json:"description"`
-	ServiceType string    `json:"serviceType"`
-	Status      string    `json:"status"`
-	Version     int       `json:"version"`
-	CreatedAt   time.Time `json:"createdAt"`
-	UpdatedAt   time.Time `json:"updatedAt"`
+	ID              uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
+	TenderID        uuid.UUID `gorm:"type:uuid" json:"tender_id"`
+	Name            string    `json:"name"`
+	Description     string    `json:"description"`
+	ServiceType     string    `json:"service_type"`
+	Status          string    `json:"status"`
+	Version         int       `json:"version"`
+	CreatorUsername string    `json:"creator_username"`
+	OrganizationID  uuid.UUID `gorm:"type:uuid" json:"organization_id"`
+	CreatedAt       time.Time `json:"created_at"`
+	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 // Proposal модель для таблицы proposal

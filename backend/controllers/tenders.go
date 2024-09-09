@@ -3,6 +3,7 @@ package controllers
 import (
 	"ZADANIE-6105/models"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -28,7 +29,7 @@ func CreateTender(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{"message": "Tender created successfully", "tender": tender})
+	c.JSON(http.StatusOK, tender)
 }
 
 func GetTenders(c *gin.Context) {
@@ -79,28 +80,67 @@ func UpdateTender(c *gin.Context) {
 	database := db.(*gorm.DB)
 	tenderID := c.Param("tenderId")
 
+	// Поиск тендера по ID
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tender not found"})
 		return
 	}
 
+	// Проверка имени пользователя
 	username := c.Query("username")
 	if username != "" && tender.CreatorUsername != username {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized to update this tender"})
 		return
 	}
 
-	var updatedFields map[string]interface{}
+	// Обновление только разрешенных полей
+	var updatedFields struct {
+		Name        *string `json:"name"`
+		Description *string `json:"description"`
+		ServiceType *string `json:"serviceType"`
+	}
+
 	if err := c.ShouldBindJSON(&updatedFields); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
+	// Сохранение текущего состояния тендера в историю
+	history := models.TenderHistory{
+		TenderID:        tender.ID,
+		Name:            tender.Name,
+		Description:     tender.Description,
+		ServiceType:     tender.ServiceType,
+		Status:          tender.Status,
+		Version:         tender.Version,
+		CreatorUsername: tender.CreatorUsername,
+		OrganizationID:  tender.OrganizationID, // Используем uuid.UUID
+		CreatedAt:       tender.CreatedAt,
+		UpdatedAt:       tender.UpdatedAt,
+	}
+
+	// Сохранение истории тендера
+	if err := database.Create(&history).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save tender history"})
+		return
+	}
+
+	// Обновление полей тендера
+	if updatedFields.Name != nil {
+		tender.Name = *updatedFields.Name
+	}
+	if updatedFields.Description != nil {
+		tender.Description = *updatedFields.Description
+	}
+	if updatedFields.ServiceType != nil {
+		tender.ServiceType = *updatedFields.ServiceType
+	}
 	tender.Version++
 	tender.UpdatedAt = time.Now()
 
-	if err := database.Model(&tender).Updates(updatedFields).Error; err != nil {
+	// Сохранение обновленного тендера
+	if err := database.Save(&tender).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender"})
 		return
 	}
@@ -157,6 +197,83 @@ func UpdateTenderStatus(c *gin.Context) {
 
 	if err := database.Save(&tender).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender status"})
+		return
+	}
+
+	c.JSON(http.StatusOK, tender)
+}
+
+func RollbackTender(c *gin.Context) {
+	db, _ := c.Get("db")
+	database := db.(*gorm.DB)
+
+	tenderID := c.Param("tenderId")
+	versionStr := c.Param("version")
+
+	// Преобразование версии в int
+	version, err := strconv.Atoi(versionStr)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid version"})
+		return
+	}
+
+	// Проверка имени пользователя
+	username := c.Query("username")
+	if username == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Username is required"})
+		return
+	}
+
+	// Поиск тендера по ID
+	var tender models.Tender
+	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Tender not found"})
+		return
+	}
+
+	// Проверка прав на изменение тендера
+	if tender.CreatorUsername != username {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized to rollback this tender"})
+		return
+	}
+
+	// Поиск версии в истории
+	var history models.TenderHistory
+	if err := database.First(&history, "tender_id = ? AND version = ?", tenderID, version).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Tender version not found"})
+		return
+	}
+
+	// Сохранение текущего состояния тендера в историю
+	currentHistory := models.TenderHistory{
+		TenderID:        tender.ID,
+		Name:            tender.Name,
+		Description:     tender.Description,
+		ServiceType:     tender.ServiceType,
+		Status:          tender.Status,
+		Version:         tender.Version,
+		CreatorUsername: tender.CreatorUsername,
+		OrganizationID:  tender.OrganizationID,
+		CreatedAt:       tender.CreatedAt,
+		UpdatedAt:       tender.UpdatedAt,
+	}
+
+	if err := database.Create(&currentHistory).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save current tender history"})
+		return
+	}
+
+	// Обновление тендера данными из истории
+	tender.Name = history.Name
+	tender.Description = history.Description
+	tender.ServiceType = history.ServiceType
+	tender.Status = history.Status
+	tender.Version++
+	tender.UpdatedAt = time.Now()
+
+	// Сохранение обновленного тендера
+	if err := database.Save(&tender).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender"})
 		return
 	}
 
