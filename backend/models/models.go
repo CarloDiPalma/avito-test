@@ -3,6 +3,7 @@ package models
 import (
 	"time"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/google/uuid"
 )
 
@@ -42,16 +43,50 @@ type OrganizationResponsible struct {
 	Employee       Employee     `gorm:"constraint:OnDelete:CASCADE"`
 }
 
+var validServiceTypes = []string{"Construction", "Delivery", "Manufacture"}
+
 type Tender struct {
 	ID              uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
 	Name            string    `json:"name" binding:"required"`
 	Description     string    `json:"description" binding:"required"`
-	ServiceType     string    `json:"serviceType" binding:"required,oneof=Construction IT Legal"`
+	ServiceType     string    `json:"serviceType" gorm:"column:service_type" validate:"required,oneof=Construction Delivery Manufacture"`
 	Status          string    `json:"status" binding:"required,oneof=Created Pending Completed"`
 	OrganizationID  uuid.UUID `json:"organizationId" binding:"required"`
 	CreatorUsername string    `json:"creatorUsername" binding:"required"`
+	Version         int       `json:"version" gorm:"default:1"`
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
+}
+
+// ValidateServiceType проверяет, что значение ServiceType является одним из допустимых значений
+func ValidateServiceType(serviceType string) bool {
+	for _, v := range validServiceTypes {
+		if serviceType == v {
+			return true
+		}
+	}
+	return false
+}
+
+// Валидация модели
+func (t *Tender) Validate() error {
+	validate := validator.New()
+	validate.RegisterValidation("oneof", func(fl validator.FieldLevel) bool {
+		return ValidateServiceType(fl.Field().String())
+	})
+	return validate.Struct(t)
+}
+
+type TenderHistory struct {
+	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
+	TenderID    uuid.UUID `json:"tenderId"` // Ссылка на основной тендер
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	ServiceType string    `json:"serviceType"`
+	Status      string    `json:"status"`
+	Version     int       `json:"version"`
+	CreatedAt   time.Time `json:"createdAt"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 // Proposal модель для таблицы proposal

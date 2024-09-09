@@ -3,17 +3,12 @@ package migrations
 import (
 	"ZADANIE-6105/models"
 	"log"
-	"os"
 
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-func RunMigrations() {
-	postgresConn := os.Getenv("POSTGRES_CONN")
-	if postgresConn == "" {
-		postgresConn = "postgres://postgres:7744@localhost:5432/avito"
-	}
+func RunMigrations(postgresConn string) {
 	db, err := gorm.Open(postgres.Open(postgresConn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
@@ -35,6 +30,7 @@ func RunMigrations() {
 		&models.Organization{},
 		&models.OrganizationResponsible{},
 		&models.Tender{},
+		&models.TenderHistory{},
 		&models.Proposal{},
 	)
 	if err != nil {

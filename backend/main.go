@@ -8,17 +8,22 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
-	// Выполнение миграций
-	migrations.RunMigrations()
+	err := godotenv.Load(".env")
 	postgresConn := os.Getenv("POSTGRES_CONN")
-	if postgresConn == "" {
-		postgresConn = "postgres://postgres:7744@localhost:5432/avito?sslmode=disable"
+	if err != nil {
+		log.Fatalf("Error loading .env file")
 	}
+	if postgresConn == "" {
+		postgresConn = "postgres://postgres:4824@localhost:5432/avito?sslmode=disable"
+	}
+	// Выполнение миграций
+	migrations.RunMigrations(postgresConn)
 	db, err := gorm.Open(postgres.Open(postgresConn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)
@@ -27,11 +32,11 @@ func main() {
 	// Инициализация и запуск сервера
 	r := gin.Default()
 
-	// Настройка CORS
 	r.Use(cors.New(cors.Config{
-		AllowOrigins: []string{"https://editor.swagger.io"},
-		AllowMethods: []string{"GET", "POST", "PATCH", "DELETE", "PUT"},
-		AllowHeaders: []string{"Origin", "Content-Type", "Authorization"},
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST", "PATCH", "DELETE", "PUT"},
+		AllowHeaders:     []string{"Origin", "Content-Type", "Authorization"},
+		AllowCredentials: true,
 	}))
 
 	// Middleware для установки базы данных в контекст

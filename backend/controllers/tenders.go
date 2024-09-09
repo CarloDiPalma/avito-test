@@ -10,9 +10,6 @@ import (
 )
 
 func CreateTender(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
-
 	var tender models.Tender
 
 	if err := c.ShouldBindJSON(&tender); err != nil {
@@ -20,7 +17,13 @@ func CreateTender(c *gin.Context) {
 		return
 	}
 
-	if err := database.Create(&tender).Error; err != nil {
+	if err := tender.Validate(); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	db := c.MustGet("db").(*gorm.DB)
+	if err := db.Create(&tender).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create tender"})
 		return
 	}
@@ -28,7 +31,6 @@ func CreateTender(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Tender created successfully", "tender": tender})
 }
 
-// GetTenders возвращает список тендеров с возможностью фильтрации по типу услуг
 func GetTenders(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)
 
@@ -48,7 +50,6 @@ func GetTenders(c *gin.Context) {
 	c.JSON(http.StatusOK, tenders)
 }
 
-// GetUserTenders возвращает список тендеров текущего пользователя
 func GetUserTenders(c *gin.Context) {
 	db := c.MustGet("db").(*gorm.DB)
 
@@ -77,45 +78,29 @@ func UpdateTender(c *gin.Context) {
 	db, _ := c.Get("db")
 	database := db.(*gorm.DB)
 	tenderID := c.Param("tenderId")
-	username := c.Query("username")
 
-	// Поиск тендера по идентификатору
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tender not found"})
 		return
 	}
 
-	// Проверка, что переданный username соответствует создателю тендера
-	if tender.CreatorUsername != username {
+	username := c.Query("username")
+	if username != "" && tender.CreatorUsername != username {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized to update this tender"})
 		return
 	}
 
-	// Получение новых данных для обновления
-	var updatedTender struct {
-		Name        string `json:"name"`
-		Description string `json:"description"`
-		ServiceType string `json:"serviceType"`
-	}
-	if err := c.ShouldBindJSON(&updatedTender); err != nil {
+	var updatedFields map[string]interface{}
+	if err := c.ShouldBindJSON(&updatedFields); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Обновление полей тендера (разрешенные поля)
-	if updatedTender.Name != "" {
-		tender.Name = updatedTender.Name
-	}
-	if updatedTender.Description != "" {
-		tender.Description = updatedTender.Description
-	}
-	if updatedTender.ServiceType != "" {
-		tender.ServiceType = updatedTender.ServiceType
-	}
+	tender.Version++
+	tender.UpdatedAt = time.Now()
 
-	// Сохранение обновленного тендера в базе данных
-	if err := database.Save(&tender).Error; err != nil {
+	if err := database.Model(&tender).Updates(updatedFields).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender"})
 		return
 	}
@@ -126,14 +111,9 @@ func UpdateTender(c *gin.Context) {
 func GetTenderStatus(c *gin.Context) {
 	db, _ := c.Get("db")
 	database := db.(*gorm.DB)
-
-	// Получение идентификатора тендера из параметров запроса
 	tenderID := c.Param("tenderId")
-
-	// Получение username из query parameters (необязательно)
 	username := c.Query("username")
 
-	// Поиск тендера по идентификатору
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tender not found"})
@@ -146,58 +126,39 @@ func GetTenderStatus(c *gin.Context) {
 		return
 	}
 
-	// Возвращение статуса тендера
 	c.JSON(http.StatusOK, tender.Status)
 }
 
 func UpdateTenderStatus(c *gin.Context) {
 	db, _ := c.Get("db")
 	database := db.(*gorm.DB)
-
-	// Получение идентификатора тендера из параметров запроса
 	tenderID := c.Param("tenderId")
 
-	// Получение обязательных query parameters
-	username := c.Query("username")
-	status := c.Query("status")
-
-	// Проверка, что обязательные параметры переданы
-	if username == "" || status == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Username and status are required"})
-		return
-	}
-
-	// Поиск тендера по идентификатору
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Tender not found"})
 		return
 	}
 
-	// Проверка, что username соответствует создателю тендера
-	if tender.CreatorUsername != username {
+	username := c.Query("username")
+	if username != "" && tender.CreatorUsername != username {
 		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized to update this tender"})
 		return
 	}
 
-	// Обновление статуса тендера
-	tender.Status = status
+	newStatus := c.Query("status")
+	if newStatus == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Status is required"})
+		return
+	}
+
+	tender.Status = newStatus
 	tender.UpdatedAt = time.Now()
 
-	// Сохранение обновленного тендера в базе данных
 	if err := database.Save(&tender).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender status"})
 		return
 	}
 
-	// Возвращение успешного ответа с обновленными данными тендера
-	c.JSON(http.StatusOK, gin.H{
-		"id":          tender.ID,
-		"name":        tender.Name,
-		"description": tender.Description,
-		"status":      tender.Status,
-		"serviceType": tender.ServiceType,
-		"version":     1, // Можно добавить логику версионирования, если необходимо
-		"createdAt":   tender.CreatedAt,
-	})
+	c.JSON(http.StatusOK, tender)
 }

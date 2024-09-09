@@ -10,7 +10,7 @@ import (
 
 // SetupRoutes инициализирует все маршруты
 func SetupRoutes(router *gin.Engine, db *gorm.DB) {
-	// Пинг эндпоинт
+
 	router.GET("/api/ping", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "pong"})
 	})
@@ -21,7 +21,7 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		api.GET("/tenders", controllers.GetTenders)
 		api.GET("/tenders/my", controllers.GetUserTenders)
 		api.POST("/employees/new", controllers.CreateEmployee)
-		api.PATCH("/api/tenders/:tenderId/edit", controllers.UpdateTender)
+		api.PATCH("/tenders/:tenderId/edit", controllers.UpdateTender)
 		api.GET("/tenders/:tenderId/status", controllers.GetTenderStatus)
 		api.PUT("/tenders/:tenderId/status", controllers.UpdateTenderStatus)
 	}
