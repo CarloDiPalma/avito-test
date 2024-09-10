@@ -27,8 +27,28 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		api.PUT("/tenders/:tenderId/rollback/:version", controllers.RollbackTender)
 		api.POST("/bids/new", controllers.CreateBid)
 		api.GET("/bids/my", controllers.GetMyBids)
-		api.GET("/bids/:tenderId/list", controllers.GetBidsByTender)
-		api.GET("/bids/:bidId/status", controllers.GetBidStatus)
+		// api.GET("/bids/:tenderId/list", controllers.GetBidsByTender)
+		// api.GET("/bids/:bidId/status", controllers.GetBidStatus)
+		// subResources := api.GET("/bids/:bidId")
+		// {
+		// 	subResources.GET("/status", controllers.GetBidStatus)
+		// 	// subResources.GET("/ssub-resources", GetSSubResources)
+		// 	// subResources.GET("/ssub-resources/:ssrid", GetSSubResourcesByID)
+		// }
+		api.GET("/bids/:id/:action", func(c *gin.Context) {
+			id := c.Param("id")
+			action := c.Param("action")
+
+			if action == "list" {
+				c.Set("tenderId", id)
+				controllers.GetBidsByTender(c)
+			} else if action == "status" {
+				c.Set("bidId", id)
+				controllers.GetBidStatus(c)
+			} else {
+				c.JSON(404, gin.H{"message": "Not found"})
+			}
+		})
 
 	}
 }

@@ -4,7 +4,6 @@ import (
 	"ZADANIE-6105/models"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -115,9 +114,8 @@ func UpdateTender(c *gin.Context) {
 		Status:          tender.Status,
 		Version:         tender.Version,
 		CreatorUsername: tender.CreatorUsername,
-		OrganizationID:  tender.OrganizationID, // Используем uuid.UUID
+		OrganizationID:  tender.OrganizationID,
 		CreatedAt:       tender.CreatedAt,
-		UpdatedAt:       tender.UpdatedAt,
 	}
 
 	// Сохранение истории тендера
@@ -137,7 +135,6 @@ func UpdateTender(c *gin.Context) {
 		tender.ServiceType = *updatedFields.ServiceType
 	}
 	tender.Version++
-	tender.UpdatedAt = time.Now()
 
 	// Сохранение обновленного тендера
 	if err := database.Save(&tender).Error; err != nil {
@@ -193,7 +190,6 @@ func UpdateTenderStatus(c *gin.Context) {
 	}
 
 	tender.Status = newStatus
-	tender.UpdatedAt = time.Now()
 
 	if err := database.Save(&tender).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender status"})
@@ -255,7 +251,6 @@ func RollbackTender(c *gin.Context) {
 		CreatorUsername: tender.CreatorUsername,
 		OrganizationID:  tender.OrganizationID,
 		CreatedAt:       tender.CreatedAt,
-		UpdatedAt:       tender.UpdatedAt,
 	}
 
 	if err := database.Create(&currentHistory).Error; err != nil {
@@ -269,7 +264,6 @@ func RollbackTender(c *gin.Context) {
 	tender.ServiceType = history.ServiceType
 	tender.Status = history.Status
 	tender.Version++
-	tender.UpdatedAt = time.Now()
 
 	// Сохранение обновленного тендера
 	if err := database.Save(&tender).Error; err != nil {

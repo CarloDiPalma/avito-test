@@ -50,12 +50,11 @@ type Tender struct {
 	Name            string    `json:"name" binding:"required,max=100"`
 	Description     string    `json:"description" binding:"required,max=500"`
 	ServiceType     string    `json:"serviceType" gorm:"column:service_type" validate:"required,oneof=Construction Delivery Manufacture"`
-	Status          string    `json:"status" binding:"required,oneof=Created Pending Completed"`
-	OrganizationID  uuid.UUID `json:"organizationId" binding:"required"`
+	Status          string    `json:"status" binding:"required,oneof=Created Published Closed"`
+	OrganizationID  uuid.UUID `json:"organizationId" binding:"required,max=100"`
 	CreatorUsername string    `json:"creatorUsername" binding:"required"`
 	Version         int       `json:"version" gorm:"default:1"`
 	CreatedAt       time.Time `json:"createdAt"`
-	UpdatedAt       time.Time `json:"updatedAt"`
 }
 
 // ValidateServiceType проверяет, что значение ServiceType является одним из допустимых значений
