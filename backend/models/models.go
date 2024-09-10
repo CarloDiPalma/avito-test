@@ -9,8 +9,8 @@ import (
 
 // Employee модель для таблицы employee
 type Employee struct {
-	ID        uint   `gorm:"primaryKey"`
-	Username  string `gorm:"unique;not null"`
+	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	Username  string    `gorm:"unique;not null"`
 	FirstName string
 	LastName  string
 	CreatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
@@ -47,8 +47,8 @@ var validServiceTypes = []string{"Construction", "Delivery", "Manufacture"}
 
 type Tender struct {
 	ID              uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
-	Name            string    `json:"name" binding:"required"`
-	Description     string    `json:"description" binding:"required"`
+	Name            string    `json:"name" binding:"required,max=100"`
+	Description     string    `json:"description" binding:"required,max=500"`
 	ServiceType     string    `json:"serviceType" gorm:"column:service_type" validate:"required,oneof=Construction Delivery Manufacture"`
 	Status          string    `json:"status" binding:"required,oneof=Created Pending Completed"`
 	OrganizationID  uuid.UUID `json:"organizationId" binding:"required"`
@@ -91,15 +91,17 @@ type TenderHistory struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
-// Proposal модель для таблицы proposal
-type Proposal struct {
-	ID         uint      `gorm:"primaryKey"`
-	TenderID   uint      `gorm:"not null"`
-	EmployeeID uint      `gorm:"not null"`
-	Offer      string    `gorm:"not null"`
-	Status     string    `gorm:"not null"`
-	CreatedAt  time.Time `gorm:"default:CURRENT_TIMESTAMP"`
-	UpdatedAt  time.Time `gorm:"default:CURRENT_TIMESTAMP"`
-	Tender     Tender    `gorm:"foreignKey:TenderID"`
-	Employee   Employee  `gorm:"foreignKey:EmployeeID"`
+type Bid struct {
+	ID              uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
+	Name            string     `json:"name" binding:"required,max=100"`
+	Description     string     `json:"description" binding:"required,max=500"`
+	Status          string     `json:"status" binding:"required,oneof=Created Published Canceled Approved Rejected"`
+	TenderID        uuid.UUID  `gorm:"type:uuid;not null" json:"tender_id"`
+	OrganizationID  uuid.UUID  `json:"organizationId" binding:"required"`
+	CreatorUsername string     `json:"creatorUsername" binding:"required"`
+	EmployeeID      *uuid.UUID `json:"employeeId,omitempty"`
+	AuthorType      string     `json:"authorType" binding:"required,oneof=Organisation, User"`
+	AuthorID        uuid.UUID  `json:"authorId" binding:"required"`
+	Version         int        `gorm:"default:1" json:"version" binding:"required,min=1"`
+	CreatedAt       time.Time  `json:"createdAt" binding:"required"`
 }

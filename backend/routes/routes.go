@@ -25,5 +25,10 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		api.GET("/tenders/:tenderId/status", controllers.GetTenderStatus)
 		api.PUT("/tenders/:tenderId/status", controllers.UpdateTenderStatus)
 		api.PUT("/tenders/:tenderId/rollback/:version", controllers.RollbackTender)
+		api.POST("/bids/new", controllers.CreateBid)
+		api.GET("/bids/my", controllers.GetMyBids)
+		api.GET("/bids/:tenderId/list", controllers.GetBidsByTender)
+		api.GET("/bids/:bidId/status", controllers.GetBidStatus)
+
 	}
 }
