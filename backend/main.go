@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ZADANIE-6105/migrations"
 	"ZADANIE-6105/routes"
 	"log"
 	"os"
@@ -22,7 +23,7 @@ func main() {
 		postgresConn = "postgres://postgres:4824@localhost:5432/avito?sslmode=disable"
 	}
 	// Выполнение миграций
-	// migrations.RunMigrations(postgresConn)
+	migrations.RunMigrations(postgresConn)
 	db, err := gorm.Open(postgres.Open(postgresConn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Error connecting to database: %v", err)

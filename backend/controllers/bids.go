@@ -17,8 +17,8 @@ func CreateBid(c *gin.Context) {
 	db, _ := c.Get("db")
 	database := db.(*gorm.DB)
 
-	// Входные данные
-	var bidInput schemas.CreateBidRequest
+	// Входные данные с использованием схемы BidCreateRequest
+	var bidInput schemas.BidCreateRequest
 
 	if err := c.ShouldBindJSON(&bidInput); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -42,33 +42,35 @@ func CreateBid(c *gin.Context) {
 		return
 	}
 
-	// Поиск Employee по CreatorUsername
+	// Проверка существования пользователя по AuthorID
 	var employee models.Employee
-	if err := database.Where("username = ?", bidInput.CreatorUsername).First(&employee).Error; err != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Unauthorized, username does not exist"})
+	if err := database.Where("id = ?", bidInput.AuthorID).First(&employee).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Unauthorized, user does not exist"})
 		return
 	}
 
-	// Преобразование OrganizationID
-	organizationID, err := uuid.Parse(bidInput.OrganizationID)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"reason": "Invalid OrganizationID format"})
-		return
+	// Проверка прав с использованием модели OrganizationResponsible
+	if bidInput.AuthorType == "Organization" {
+		var orgResponsible models.OrganizationResponsible
+		if err := database.Where("organization_id = ? AND employee_id = ?", tender.OrganizationID, employee.ID).First(&orgResponsible).Error; err != nil {
+			if err == gorm.ErrRecordNotFound {
+				c.JSON(http.StatusForbidden, gin.H{"reason": "Unauthorized to create bid as Organization"})
+				return
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"reason": "Database error while checking organization responsible"})
+			return
+		}
 	}
 
 	// Создание нового предложения
 	bid := models.Bid{
-		Name:            bidInput.Name,
-		Description:     bidInput.Description,
-		Status:          bidInput.Status,
-		TenderID:        tenderID,
-		OrganizationID:  organizationID,
-		EmployeeID:      &employee.ID,
-		CreatorUsername: bidInput.CreatorUsername,
-		AuthorType:      "User", // Пример статуса автора, можно сделать динамическим
-		AuthorID:        employee.ID,
-		Version:         1, // Начальная версия
-		CreatedAt:       time.Now(),
+		Name:        bidInput.Name,
+		Description: bidInput.Description,
+		TenderID:    tenderID,
+		AuthorType:  bidInput.AuthorType,
+		AuthorID:    employee.ID,
+		Version:     1, // Начальная версия
+		CreatedAt:   time.Now(),
 	}
 
 	if err := database.Create(&bid).Error; err != nil {
@@ -77,14 +79,14 @@ func CreateBid(c *gin.Context) {
 	}
 
 	// Формирование ответа
-	response := schemas.CreateBidResponse{
+	response := schemas.BidCreateResponse{
 		ID:         bid.ID,
 		Name:       bid.Name,
 		Status:     bid.Status,
 		AuthorType: bid.AuthorType,
 		AuthorID:   bid.AuthorID,
 		Version:    bid.Version,
-		CreatedAt:  bid.CreatedAt,
+		CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -121,28 +123,22 @@ func GetMyBids(c *gin.Context) {
 
 	// Получение списка предложений текущего пользователя
 	var bids []models.Bid
-	if err := database.Where("employee_id = ?", employee.ID).Limit(limit).Offset(offset).Find(&bids).Error; err != nil {
+	if err := database.Where("author_id = ?", employee.ID).Limit(limit).Offset(offset).Find(&bids).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve bids"})
 		return
 	}
 
-	// Преобразуем bids в CreateBidResponse
-	var responseBids []schemas.CreateBidResponse
+	// Преобразуем bids в BidCreateResponse
+	var responseBids []schemas.BidCreateResponse
 	for _, bid := range bids {
-		// Распаковываем указатель *uuid.UUID в uuid.UUID
-		authorID := uuid.UUID{}
-		if bid.EmployeeID != nil {
-			authorID = *bid.EmployeeID
-		}
-
-		responseBids = append(responseBids, schemas.CreateBidResponse{
+		responseBids = append(responseBids, schemas.BidCreateResponse{
 			ID:         bid.ID,
 			Name:       bid.Name,
 			Status:     bid.Status,
-			AuthorID:   authorID, // Используем распакованное значение
-			AuthorType: "User",   // предполагаемое значение
+			AuthorID:   bid.AuthorID,
+			AuthorType: bid.AuthorType,
 			Version:    bid.Version,
-			CreatedAt:  bid.CreatedAt,
+			CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
 		})
 	}
 
@@ -155,6 +151,10 @@ func GetBidsByTender(c *gin.Context) {
 
 	// Получение идентификатора тендера из параметров запроса
 	tenderID := c.Param("tenderId")
+	if tenderID == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Tender ID is required"})
+		return
+	}
 
 	// Проверка существования тендера
 	var tender models.Tender
@@ -201,23 +201,17 @@ func GetBidsByTender(c *gin.Context) {
 		return
 	}
 
-	// Преобразование bids в CreateBidResponse
-	var responseBids []schemas.CreateBidResponse
+	// Преобразование bids в BidCreateResponse
+	var responseBids []schemas.BidCreateResponse
 	for _, bid := range bids {
-		// Распаковываем указатель *uuid.UUID в uuid.UUID
-		authorID := uuid.UUID{}
-		if bid.EmployeeID != nil {
-			authorID = *bid.EmployeeID
-		}
-
-		responseBids = append(responseBids, schemas.CreateBidResponse{
+		responseBids = append(responseBids, schemas.BidCreateResponse{
 			ID:         bid.ID,
 			Name:       bid.Name,
 			Status:     bid.Status,
-			AuthorID:   authorID,
-			AuthorType: "User", // предполагаемое значение
+			AuthorType: bid.AuthorType,
+			AuthorID:   bid.AuthorID,
 			Version:    bid.Version,
-			CreatedAt:  bid.CreatedAt,
+			CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
 		})
 	}
 

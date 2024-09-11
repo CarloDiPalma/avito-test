@@ -1,8 +1,6 @@
 package schemas
 
 import (
-	"time"
-
 	"github.com/google/uuid"
 )
 
@@ -37,12 +35,20 @@ type CreateBidRequest struct {
 	CreatorUsername string `json:"creatorUsername" binding:"required"`
 }
 
-type CreateBidResponse struct {
+type BidCreateRequest struct {
+	Name        string `json:"name" binding:"required,max=100"`
+	Description string `json:"description" binding:"required,max=500"`
+	TenderID    string `json:"tenderId" binding:"required,uuid"`
+	AuthorType  string `json:"authorType" binding:"required,oneof=User Organization"`
+	AuthorID    string `json:"authorId" binding:"required,uuid"`
+}
+
+type BidCreateResponse struct {
 	ID         uuid.UUID `json:"id"`
 	Name       string    `json:"name"`
 	Status     string    `json:"status"`
 	AuthorType string    `json:"authorType"`
 	AuthorID   uuid.UUID `json:"authorId"`
 	Version    int       `json:"version"`
-	CreatedAt  time.Time `json:"createdAt"`
+	CreatedAt  string    `json:"createdAt"`
 }

@@ -89,16 +89,14 @@ type TenderHistory struct {
 }
 
 type Bid struct {
-	ID              uuid.UUID  `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
-	Name            string     `json:"name" binding:"required,max=100"`
-	Description     string     `json:"description" binding:"required,max=500"`
-	Status          string     `json:"status" binding:"required,oneof=Created Published Canceled Approved Rejected"`
-	TenderID        uuid.UUID  `gorm:"type:uuid;not null" json:"tender_id"`
-	OrganizationID  uuid.UUID  `json:"organizationId" binding:"required"`
-	CreatorUsername string     `json:"creatorUsername" binding:"required"`
-	EmployeeID      *uuid.UUID `json:"employeeId,omitempty"`
-	AuthorType      string     `json:"authorType" binding:"required,oneof=Organisation, User"`
-	AuthorID        uuid.UUID  `json:"authorId" binding:"required"`
-	Version         int        `gorm:"default:1" json:"version" binding:"required,min=1"`
-	CreatedAt       time.Time  `json:"createdAt" binding:"required"`
+	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
+	Name        string    `json:"name" binding:"required,max=100"`
+	Description string    `json:"description" binding:"required,max=500"`
+	Status      string    `json:"status" binding:"required,oneof=Created Published Canceled"`
+	TenderID    uuid.UUID `gorm:"type:uuid;not null" json:"tender_id"`
+	AuthorType  string    `json:"authorType" binding:"required,oneof=Organisation, User"`
+	AuthorID    uuid.UUID `json:"authorId" binding:"required"`
+	Version     int       `gorm:"default:1" json:"version" binding:"required,min=1"`
+	CreatedAt   time.Time `json:"createdAt" binding:"required"`
+	Decision    *string   `gorm:"type:bid_decision;default:NULL"`
 }
