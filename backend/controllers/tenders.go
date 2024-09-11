@@ -2,18 +2,61 @@ package controllers
 
 import (
 	"ZADANIE-6105/models"
+	"ZADANIE-6105/schemas"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
+
+// Проверка валидности пользователя по имени пользователя
+func isValidUser(db *gorm.DB, username string) bool {
+	var employee models.Employee
+	result := db.Where("username = ?", username).First(&employee)
+
+	// Если результат не найден или произошла ошибка, пользователь невалиден
+	return result.Error == nil && result.RowsAffected > 0
+}
+
+// Проверка, является ли пользователь ответственным за организацию
+func isResponsibleForOrganization(db *gorm.DB, organizationID uuid.UUID, employeeID uuid.UUID) bool {
+	var responsibility models.OrganizationResponsible
+	result := db.Where("organization_id = ? AND employee_id = ?", organizationID, employeeID).First(&responsibility)
+	return result.Error == nil && result.RowsAffected > 0
+}
 
 func CreateTender(c *gin.Context) {
 	var tender models.Tender
 
+	// Извлечение данных из тела запроса
 	if err := c.ShouldBindJSON(&tender); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Проверка, что creatorUsername не пуст
+	if tender.CreatorUsername == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"reason": "creatorUsername cannot be empty"})
+		return
+	}
+
+	// Получите доступ к базе данных
+	db := c.MustGet("db").(*gorm.DB)
+
+	// Получите ID сотрудника по имени пользователя
+	var employee models.Employee
+	result := db.Where("username = ?", tender.CreatorUsername).First(&employee)
+	if result.Error != nil || result.RowsAffected == 0 {
+		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid or non-existent user"})
+		return
+	}
+
+	// Проверьте, является ли сотрудник ответственным за организацию
+	if !isResponsibleForOrganization(db, tender.OrganizationID, employee.ID) {
+		c.JSON(http.StatusForbidden, gin.H{"reason": "User is not responsible for the organization"})
 		return
 	}
 
@@ -22,13 +65,22 @@ func CreateTender(c *gin.Context) {
 		return
 	}
 
-	db := c.MustGet("db").(*gorm.DB)
 	if err := db.Create(&tender).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create tender"})
 		return
 	}
 
-	c.JSON(http.StatusOK, tender)
+	response := schemas.CreateTenderResponse{
+		ID:          tender.ID,
+		Name:        tender.Name,
+		Description: tender.Description,
+		ServiceType: tender.ServiceType,
+		Status:      tender.Status,
+		Version:     tender.Version,
+		CreatedAt:   tender.CreatedAt.Format(time.RFC3339),
+	}
+
+	c.JSON(http.StatusOK, response)
 }
 
 func GetTenders(c *gin.Context) {

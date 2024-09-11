@@ -6,6 +6,16 @@ import (
 	"github.com/google/uuid"
 )
 
+type CreateTenderResponse struct {
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	Description string    `json:"description"`
+	ServiceType string    `json:"serviceType"`
+	Status      string    `json:"status"`
+	Version     int       `json:"version"`
+	CreatedAt   string    `json:"createdAt"`
+}
+
 type CreateBidRequest struct {
 	Name            string `json:"name" binding:"required,max=100"`
 	Description     string `json:"description" binding:"required,max=500"`

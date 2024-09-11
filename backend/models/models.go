@@ -36,11 +36,9 @@ type Organization struct {
 }
 
 type OrganizationResponsible struct {
-	ID             uuid.UUID    `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
-	OrganizationID uuid.UUID    `gorm:"type:uuid;not null" gorm:"foreignKey:OrganizationID"`
-	EmployeeID     uuid.UUID    `gorm:"type:uuid;not null" gorm:"foreignKey:EmployeeID"`
-	Organization   Organization `gorm:"constraint:OnDelete:CASCADE"`
-	Employee       Employee     `gorm:"constraint:OnDelete:CASCADE"`
+	ID             uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	OrganizationID uuid.UUID `gorm:"type:uuid;not null" gorm:"foreignKey:OrganizationID"`
+	EmployeeID     uuid.UUID `gorm:"type:uuid;not null" gorm:"foreignKey:EmployeeID"`
 }
 
 var validServiceTypes = []string{"Construction", "Delivery", "Manufacture"}
@@ -50,7 +48,7 @@ type Tender struct {
 	Name            string    `json:"name" binding:"required,max=100"`
 	Description     string    `json:"description" binding:"required,max=500"`
 	ServiceType     string    `json:"serviceType" gorm:"column:service_type" validate:"required,oneof=Construction Delivery Manufacture"`
-	Status          string    `json:"status" binding:"required,oneof=Created Published Closed"`
+	Status          string    `json:"status" binding:"omitempty,oneof=Created Published Closed" gorm:"default:'Created'"`
 	OrganizationID  uuid.UUID `json:"organizationId" binding:"required,max=100"`
 	CreatorUsername string    `json:"creatorUsername" binding:"required"`
 	Version         int       `json:"version" gorm:"default:1"`
