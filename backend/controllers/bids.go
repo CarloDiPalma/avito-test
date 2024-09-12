@@ -1,12 +1,12 @@
 package controllers
 
 import (
+	"ZADANIE-6105/models"
+	"ZADANIE-6105/schemas"
+
 	"net/http"
 	"strconv"
 	"time"
-
-	"ZADANIE-6105/models"
-	"ZADANIE-6105/schemas"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -718,7 +718,6 @@ func GetBidReviews(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Invalid or non-existent author user"})
 		return
 	}
-
 	// Получение отзывов из таблицы bid_feedbacks для данного тендера и автора
 	var reviews []schemas.BidReviewResponse
 	if err := database.Table("bid_feedbacks").Select("id, feedback as description, created_at").

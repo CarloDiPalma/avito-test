@@ -46,5 +46,6 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		api.PUT("/bids/:bidId/rollback/:version", controllers.RollbackBid)
 		api.PUT("/bids/:bidId/submit_decision", controllers.SubmitDecision)
 		api.PUT("/bids/:bidId/feedback", controllers.SendFeedback)
+		api.GET("/bids/:tenderId/reviews", controllers.GetBidReviews)
 	}
 }
