@@ -27,28 +27,24 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 		api.PUT("/tenders/:tenderId/rollback/:version", controllers.RollbackTender)
 		api.POST("/bids/new", controllers.CreateBid)
 		api.GET("/bids/my", controllers.GetMyBids)
-		// api.GET("/bids/:tenderId/list", controllers.GetBidsByTender)
-		// api.GET("/bids/:bidId/status", controllers.GetBidStatus)
-		// subResources := api.GET("/bids/:bidId")
-		// {
-		// 	subResources.GET("/status", controllers.GetBidStatus)
-		// 	// subResources.GET("/ssub-resources", GetSSubResources)
-		// 	// subResources.GET("/ssub-resources/:ssrid", GetSSubResourcesByID)
-		// }
-		api.GET("/bids/:id/:action", func(c *gin.Context) {
-			id := c.Param("id")
+		api.GET("/bids/:tenderId/:action", func(c *gin.Context) {
 			action := c.Param("action")
 
 			if action == "list" {
-				c.Set("tenderId", id)
+				// Вызов GetBidsByTender без явного использования переменной tenderId
 				controllers.GetBidsByTender(c)
 			} else if action == "status" {
-				c.Set("bidId", id)
+				bidId := c.Param("tenderId") // Используем параметр как bidId для статуса
+				c.Set("bidId", bidId)
 				controllers.GetBidStatus(c)
 			} else {
-				c.JSON(404, gin.H{"message": "Not found"})
+				c.JSON(404, gin.H{"reason": "Not found"})
 			}
 		})
-
+		api.PUT("/bids/:bidId/status", controllers.UpdateBidStatus)
+		api.PATCH("/bids/:bidId/edit", controllers.EditBid)
+		api.PUT("/bids/:bidId/rollback/:version", controllers.RollbackBid)
+		api.PUT("/bids/:bidId/submit_decision", controllers.SubmitDecision)
+		api.PUT("/bids/:bidId/feedback", controllers.SendFeedback)
 	}
 }

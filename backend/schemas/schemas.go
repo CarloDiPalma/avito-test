@@ -52,3 +52,14 @@ type BidCreateResponse struct {
 	Version    int       `json:"version"`
 	CreatedAt  string    `json:"createdAt"`
 }
+
+type BidEditRequest struct {
+	Name        string `json:"name" binding:"required,max=100"`
+	Description string `json:"description" binding:"required,max=500"`
+}
+
+type BidReviewResponse struct {
+	ID          uuid.UUID `json:"id"`
+	Description string    `json:"description"`
+	CreatedAt   string    `json:"createdAt"`
+}

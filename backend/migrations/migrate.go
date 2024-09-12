@@ -32,6 +32,8 @@ func RunMigrations(postgresConn string) {
 		&models.Tender{},
 		&models.TenderHistory{},
 		&models.Bid{},
+		&models.BidHistory{},
+		&models.BidFeedback{},
 	)
 	if err != nil {
 		log.Fatalf("Error migrating database: %v", err)

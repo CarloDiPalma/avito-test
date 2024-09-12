@@ -100,3 +100,25 @@ type Bid struct {
 	CreatedAt   time.Time `json:"createdAt" binding:"required"`
 	Decision    *string   `gorm:"type:bid_decision;default:NULL"`
 }
+
+type BidHistory struct {
+	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	BidID       uuid.UUID `gorm:"type:uuid;not null" json:"bidId"`
+	Name        string    `json:"name" binding:"required,max=100"`
+	Description string    `json:"description" binding:"required,max=500"`
+	Status      string    `json:"status" binding:"required,oneof=Created Published Canceled"`
+	TenderID    uuid.UUID `gorm:"type:uuid;not null" json:"tender_id"`
+	AuthorType  string    `json:"authorType" binding:"required,oneof=Organisation, User"`
+	AuthorID    uuid.UUID `json:"authorId" binding:"required"`
+	Version     int       `gorm:"default:1" json:"version" binding:"required,min=1"`
+	CreatedAt   time.Time `json:"createdAt"`
+	Decision    *string   `gorm:"type:bid_decision;default:NULL"`
+}
+
+type BidFeedback struct {
+	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
+	BidID     uuid.UUID `gorm:"type:uuid;not null" json:"bid_id"`
+	Feedback  string    `json:"feedback" binding:"required,max=1000"`
+	AuthorID  uuid.UUID `json:"author_id" binding:"required"`
+	CreatedAt time.Time `json:"created_at" binding:"required"`
+}
