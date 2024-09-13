@@ -65,6 +65,10 @@ type Tender struct {
 	CreatedAt       time.Time `json:"createdAt"`
 }
 
+func (Tender) TableName() string {
+	return "tender"
+}
+
 func ValidateServiceType(serviceType string) bool {
 	for _, v := range validServiceTypes {
 		if serviceType == v {
@@ -101,6 +105,10 @@ type TenderHistory struct {
 	UpdatedAt       time.Time `json:"updated_at"`
 }
 
+func (TenderHistory) TableName() string {
+	return "tender_history"
+}
+
 type Bid struct {
 	ID          uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4()" json:"id"`
 	Name        string    `json:"name" binding:"required,max=100"`
@@ -112,6 +120,10 @@ type Bid struct {
 	Version     int       `gorm:"default:1" json:"version" binding:"required,min=1"`
 	CreatedAt   time.Time `json:"createdAt" binding:"required"`
 	Decision    *string   `gorm:"type:bid_decision;default:NULL"`
+}
+
+func (Bid) TableName() string {
+	return "bid"
 }
 
 type BidHistory struct {
@@ -128,10 +140,18 @@ type BidHistory struct {
 	Decision    *string   `gorm:"type:bid_decision;default:NULL"`
 }
 
+func (BidHistory) TableName() string {
+	return "bid_history"
+}
+
 type BidFeedback struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey" json:"id"`
 	BidID     uuid.UUID `gorm:"type:uuid;not null" json:"bid_id"`
 	Feedback  string    `json:"feedback" binding:"required,max=1000"`
 	AuthorID  uuid.UUID `json:"author_id" binding:"required"`
 	CreatedAt time.Time `json:"created_at" binding:"required"`
+}
+
+func (BidFeedback) TableName() string {
+	return "bid_feedback"
 }

@@ -70,9 +70,6 @@ func dropTables(db *gorm.DB) error {
 		"bids",
 		"bid_histories",
 		"bid_feedbacks",
-		"employees",
-		"organization_responsibles",
-		"organizations",
 	}
 
 	for _, table := range tables {
