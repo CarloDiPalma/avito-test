@@ -17,6 +17,10 @@ type Employee struct {
 	UpdatedAt time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
+func (Employee) TableName() string {
+	return "employee"
+}
+
 // OrganizationType определяет тип организации
 type OrganizationType string
 
@@ -35,10 +39,18 @@ type Organization struct {
 	UpdatedAt   time.Time `gorm:"default:CURRENT_TIMESTAMP"`
 }
 
+func (Organization) TableName() string {
+	return "organization"
+}
+
 type OrganizationResponsible struct {
 	ID             uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	OrganizationID uuid.UUID `gorm:"type:uuid;not null;foreignKey:OrganizationID"`
-	EmployeeID     uuid.UUID `gorm:"type:uuid;not null;foreignKey:EmployeeID"`
+	UserID         uuid.UUID `gorm:"type:uuid;not null;foreignKey:EmployeeID"`
+}
+
+func (OrganizationResponsible) TableName() string {
+	return "organization_responsible"
 }
 
 var validServiceTypes = []string{"Construction", "Delivery", "Manufacture"}

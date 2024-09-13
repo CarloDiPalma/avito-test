@@ -48,9 +48,9 @@ func RunMigrations(postgresConn string) {
 
 	// Автоматическая миграция всех моделей
 	err = db.AutoMigrate(
-		&models.Employee{},
-		&models.Organization{},
-		&models.OrganizationResponsible{},
+		// &models.Employee{},
+		// &models.Organization{},
+		// &models.OrganizationResponsible{},
 		&models.Tender{},
 		&models.TenderHistory{},
 		&models.Bid{},
@@ -72,6 +72,9 @@ func dropTables(db *gorm.DB) error {
 		"bids",
 		"bid_histories",
 		"bid_feedbacks",
+		"employees",
+		"organization_responsibles",
+		"organizations",
 	}
 
 	for _, table := range tables {

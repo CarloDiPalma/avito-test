@@ -8,29 +8,23 @@ import (
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+
+	// "github.com/joho/godotenv"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
-	// loadEnvFile := os.Getenv("LOAD_ENV_FILE")
-	// if loadEnvFile == "" {
-	// 	loadEnvFile = "false"
+	// err := godotenv.Load()
+	// if err != nil {
+	// 	log.Fatalf("Error loading .env file")
 	// }
-
-	// if loadEnvFile == "true" {
-	// 	err := godotenv.Load()
-	// 	if err != nil {
-	// 		log.Fatalf("Error loading .env file")
-	// 	}
-	// }
-
 	postgresConn := os.Getenv("POSTGRES_CONN")
 	if postgresConn == "" {
 		postgresConn = "postgres://cnrprod1725742191-team-77945:cnrprod1725742191-team-77945@rc1b-5xmqy6bq501kls4m.mdb.yandexcloud.net:6432/cnrprod1725742191-team-77945?target_session_attrs=read-write"
 		// postgresConn = "postgres://postgres:4824@localhost:5432/avito?sslmode=disable"
 	}
-
+	log.Println(postgresConn)
 	// Выполнение миграций
 	migrations.RunMigrations(postgresConn)
 	db, err := gorm.Open(postgres.Open(postgresConn), &gorm.Config{})

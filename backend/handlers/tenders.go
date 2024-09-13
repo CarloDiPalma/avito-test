@@ -14,9 +14,9 @@ import (
 )
 
 // Проверка, является ли пользователь ответственным за организацию
-func isResponsibleForOrganization(db *gorm.DB, organizationID uuid.UUID, employeeID uuid.UUID) bool {
+func isResponsibleForOrganization(db *gorm.DB, organizationID uuid.UUID, userID uuid.UUID) bool {
 	var responsibility models.OrganizationResponsible
-	result := db.Where("organization_id = ? AND employee_id = ?", organizationID, employeeID).First(&responsibility)
+	result := db.Where("organization_id = ? AND user_id = ?", organizationID, userID).First(&responsibility)
 	return result.Error == nil && result.RowsAffected > 0
 }
 
