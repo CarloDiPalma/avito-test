@@ -585,7 +585,7 @@ func SendFeedback(c *gin.Context) {
 	}
 
 	var orgResp models.OrganizationResponsible
-	if err := database.First(&orgResp, "organization_id = ? AND employee_id = ?", tender.OrganizationID, employee.ID).Error; err != nil {
+	if err := database.First(&orgResp, "organization_id = ? AND user_id = ?", tender.OrganizationID, employee.ID).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "User is not authorized to submit feedback for this bid"})
 		return
 	}
