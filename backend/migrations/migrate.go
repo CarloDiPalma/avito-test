@@ -47,9 +47,9 @@ func RunMigrations(postgresConn string) {
 	}
 
 	err = db.AutoMigrate(
-		// &models.Employee{},
-		// &models.Organization{},
-		// &models.OrganizationResponsible{},
+		&models.Employee{},
+		&models.Organization{},
+		&models.OrganizationResponsible{},
 		&models.Tender{},
 		&models.TenderHistory{},
 		&models.Bid{},
@@ -65,6 +65,7 @@ func RunMigrations(postgresConn string) {
 
 func dropTables(db *gorm.DB) error {
 	tables := []string{
+		"organizations",
 		"tenders",
 		"tender_histories",
 		"bids",

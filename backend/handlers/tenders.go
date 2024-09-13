@@ -6,7 +6,6 @@ import (
 	"ZADANIE-6105/utils"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -66,7 +65,7 @@ func CreateTender(c *gin.Context) {
 		ServiceType: tender.ServiceType,
 		Status:      tender.Status,
 		Version:     tender.Version,
-		CreatedAt:   tender.CreatedAt.Format(time.RFC3339),
+		CreatedAt:   tender.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -129,7 +128,7 @@ func GetTenders(c *gin.Context) {
 			ServiceType: tender.ServiceType,
 			Status:      tender.Status,
 			Version:     tender.Version,
-			CreatedAt:   tender.CreatedAt.Format(time.RFC3339),
+			CreatedAt:   tender.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 		})
 	}
 
@@ -190,7 +189,7 @@ func GetUserTenders(c *gin.Context) {
 			ServiceType: tender.ServiceType,
 			Status:      tender.Status,
 			Version:     tender.Version,
-			CreatedAt:   tender.CreatedAt.Format(time.RFC3339),
+			CreatedAt:   tender.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 		})
 	}
 
@@ -261,7 +260,7 @@ func UpdateTender(c *gin.Context) {
 		ServiceType: tender.ServiceType,
 		Status:      tender.Status,
 		Version:     tender.Version,
-		CreatedAt:   tender.CreatedAt.Format(time.RFC3339),
+		CreatedAt:   tender.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	})
 }
 
@@ -349,7 +348,7 @@ func UpdateTenderStatus(c *gin.Context) {
 		ServiceType: tender.ServiceType,
 		Status:      tender.Status,
 		Version:     tender.Version,
-		CreatedAt:   tender.CreatedAt.Format(time.RFC3339),
+		CreatedAt:   tender.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -444,7 +443,7 @@ func RollbackTender(c *gin.Context) {
 		ServiceType: tender.ServiceType,
 		Status:      tender.Status,
 		Version:     tender.Version,
-		CreatedAt:   tender.CreatedAt.Format(time.RFC3339),
+		CreatedAt:   tender.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 
 	c.JSON(http.StatusOK, tenderResponse)

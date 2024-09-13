@@ -84,7 +84,7 @@ func CreateBid(c *gin.Context) {
 		AuthorType: bid.AuthorType,
 		AuthorID:   bid.AuthorID,
 		Version:    bid.Version,
-		CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
+		CreatedAt:  bid.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -133,7 +133,7 @@ func GetMyBids(c *gin.Context) {
 			AuthorID:   bid.AuthorID,
 			AuthorType: bid.AuthorType,
 			Version:    bid.Version,
-			CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
+			CreatedAt:  bid.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 		})
 	}
 
@@ -200,7 +200,7 @@ func GetBidsByTender(c *gin.Context) {
 			AuthorType: bid.AuthorType,
 			AuthorID:   bid.AuthorID,
 			Version:    bid.Version,
-			CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
+			CreatedAt:  bid.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 		})
 	}
 
@@ -320,7 +320,7 @@ func UpdateBidStatus(c *gin.Context) {
 		AuthorType: bid.AuthorType,
 		AuthorID:   bid.AuthorID,
 		Version:    bid.Version,
-		CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
+		CreatedAt:  bid.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 
 	c.JSON(http.StatusOK, response)
@@ -392,7 +392,7 @@ func EditBid(c *gin.Context) {
 		AuthorType: bid.AuthorType,
 		AuthorID:   bid.AuthorID,
 		Version:    bid.Version,
-		CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
+		CreatedAt:  bid.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 	c.JSON(http.StatusOK, response)
 }
@@ -474,7 +474,7 @@ func RollbackBid(c *gin.Context) {
 		AuthorType: bid.AuthorType,
 		AuthorID:   bid.AuthorID,
 		Version:    bid.Version,
-		CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
+		CreatedAt:  bid.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 	c.JSON(http.StatusOK, response)
 }
@@ -529,7 +529,7 @@ func SubmitDecision(c *gin.Context) {
 		AuthorType: bid.AuthorType,
 		AuthorID:   bid.AuthorID,
 		Version:    bid.Version,
-		CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
+		CreatedAt:  bid.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 	c.JSON(http.StatusOK, response)
 }
@@ -601,7 +601,7 @@ func SendFeedback(c *gin.Context) {
 		AuthorType: bid.AuthorType,
 		AuthorID:   bid.AuthorID,
 		Version:    bid.Version,
-		CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
+		CreatedAt:  bid.CreatedAt.Format("2006-01-02T15:04:05-07:00"),
 	}
 	c.JSON(http.StatusOK, response)
 }
