@@ -658,7 +658,7 @@ func GetBidReviews(c *gin.Context) {
 	}
 
 	var organizationResponsible models.OrganizationResponsible
-	if err := database.First(&organizationResponsible, "organization_id = ? AND employee_id = ?", tender.OrganizationID, requesterEmployee.ID).Error; err != nil {
+	if err := database.First(&organizationResponsible, "organization_id = ? AND user_id = ?", tender.OrganizationID, requesterEmployee.ID).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "Requester does not have permission to view reviews for this tender"})
 		return
 	}
