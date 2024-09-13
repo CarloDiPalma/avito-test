@@ -14,6 +14,12 @@ func RunMigrations(postgresConn string) {
 		log.Fatalf("Error connecting to database: %v", err)
 	}
 
+	// Удаление таблиц перед миграцией
+	err = dropTables(db)
+	if err != nil {
+		log.Fatalf("Error dropping tables: %v", err)
+	}
+
 	// Создание типа данных organization_type, если он не существует
 	err = db.Exec(`DO $$ BEGIN
         IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'organization_type') THEN
@@ -56,4 +62,25 @@ func RunMigrations(postgresConn string) {
 	}
 
 	log.Println("Database migrated successfully")
+}
+
+// Функция для удаления таблиц
+func dropTables(db *gorm.DB) error {
+	tables := []string{
+		"tenders",
+		"tender_histories",
+		"bids",
+		"bid_histories",
+		"bid_feedbacks",
+	}
+
+	for _, table := range tables {
+		err := db.Exec("DROP TABLE IF EXISTS " + table + " CASCADE;").Error
+		if err != nil {
+			return err
+		}
+	}
+
+	log.Println("Tables dropped successfully")
+	return nil
 }
