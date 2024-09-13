@@ -11,8 +11,6 @@ FROM alpine:latest
 
 WORKDIR /root/
 
-
-# Копируем бинарник и файл .env из предыдущего этапа
 COPY --from=builder /app/main .
 
 ENV SERVER_ADDRESS=0.0.0.0:8080

@@ -20,7 +20,6 @@ func CreateBid(c *gin.Context) {
 		return
 	}
 
-	// Входные данные с использованием схемы BidCreateRequest
 	var bidInput schemas.BidCreateRequest
 
 	if err := c.ShouldBindJSON(&bidInput); err != nil {
@@ -28,7 +27,6 @@ func CreateBid(c *gin.Context) {
 		return
 	}
 
-	// Проверка существования тендера по TenderID
 	tenderID, err := uuid.Parse(bidInput.TenderID)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "Invalid TenderID format"})
@@ -45,14 +43,12 @@ func CreateBid(c *gin.Context) {
 		return
 	}
 
-	// Проверка существования пользователя по AuthorID
 	var employee models.Employee
 	if err := database.Where("id = ?", bidInput.AuthorID).First(&employee).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Unauthorized, user does not exist"})
 		return
 	}
 
-	// Проверка прав с использованием модели OrganizationResponsible
 	if bidInput.AuthorType == "Organization" {
 		var orgResponsible models.OrganizationResponsible
 		if err := database.Where("organization_id = ? AND employee_id = ?", tender.OrganizationID, employee.ID).First(&orgResponsible).Error; err != nil {
@@ -65,7 +61,6 @@ func CreateBid(c *gin.Context) {
 		}
 	}
 
-	// Создание нового предложения
 	bid := models.Bid{
 		Name:        bidInput.Name,
 		Description: bidInput.Description,
@@ -82,7 +77,6 @@ func CreateBid(c *gin.Context) {
 		return
 	}
 
-	// Формирование ответа
 	response := schemas.BidCreateResponse{
 		ID:         bid.ID,
 		Name:       bid.Name,
@@ -102,21 +96,18 @@ func GetMyBids(c *gin.Context) {
 		return
 	}
 
-	// Получение username из query
 	username := c.Query("username")
 	if username == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Username is required"})
 		return
 	}
 
-	// Проверка, существует ли пользователь с данным username
 	var employee models.Employee
 	if err := database.Where("username = ?", username).First(&employee).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid username"})
 		return
 	}
 
-	// Параметры пагинации (по умолчанию limit = 5, offset = 0)
 	limit := 5
 	offset := 0
 
@@ -127,14 +118,12 @@ func GetMyBids(c *gin.Context) {
 		offset = o
 	}
 
-	// Получение списка предложений текущего пользователя
 	var bids []models.Bid
 	if err := database.Where("author_id = ?", employee.ID).Limit(limit).Offset(offset).Find(&bids).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve bids"})
 		return
 	}
 
-	// Преобразуем bids в BidCreateResponse
 	var responseBids []schemas.BidCreateResponse
 	for _, bid := range bids {
 		responseBids = append(responseBids, schemas.BidCreateResponse{
@@ -157,41 +146,35 @@ func GetBidsByTender(c *gin.Context) {
 		return
 	}
 
-	// Получение идентификатора тендера из параметров запроса
 	tenderID := c.Param("tenderId")
 	if tenderID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "Tender ID is required"})
 		return
 	}
 
-	// Проверка существования тендера
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Tender not found"})
 		return
 	}
 
-	// Получение username из query
 	username := c.Query("username")
 	if username == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Username is required"})
 		return
 	}
 
-	// Проверка существования пользователя
 	var employee models.Employee
 	if err := database.First(&employee, "username = ?", username).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid or non-existent user"})
 		return
 	}
 
-	// Проверка прав доступа: пользователь должен быть создателем тендера
 	if tender.CreatorUsername != username {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "User is not authorized to access bids for this tender"})
 		return
 	}
 
-	// Параметры пагинации (по умолчанию limit = 5, offset = 0)
 	limit := 5
 	offset := 0
 
@@ -202,14 +185,12 @@ func GetBidsByTender(c *gin.Context) {
 		offset = o
 	}
 
-	// Получение списка предложений, связанных с указанным тендером
 	var bids []models.Bid
 	if err := database.Where("tender_id = ?", tenderID).Limit(limit).Offset(offset).Find(&bids).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Failed to retrieve bids"})
 		return
 	}
 
-	// Преобразование bids в BidCreateResponse
 	var responseBids []schemas.BidCreateResponse
 	for _, bid := range bids {
 		responseBids = append(responseBids, schemas.BidCreateResponse{
@@ -232,51 +213,40 @@ func GetBidStatus(c *gin.Context) {
 		return
 	}
 
-	// Получение идентификатора предложения из параметров запроса
 	bidID := c.GetString("bidId")
 
-	// Проверка наличия bidID
 	if bidID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "Bid ID is required"})
 		return
 	}
 
-	// Получение username из query
 	username := c.Query("username")
 	if username == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Username is required"})
 		return
 	}
 
-	// Проверка существования пользователя
 	var employee models.Employee
 	if err := database.First(&employee, "username = ?", username).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid or non-existent user"})
 		return
 	}
 
-	// Поиск предложения по ID
 	var bid models.Bid
 	if err := database.First(&bid, "id = ?", bidID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Bid not found"})
 		return
 	}
 
-	// Проверка прав доступа: пользователь должен быть создателем предложения
 	if bid.AuthorID != employee.ID {
-		// Проверка, является ли пользователь ответственным за организацию, к которой принадлежит предложение
 		var orgResponsible models.OrganizationResponsible
 		if err := database.Where("organization_id = ? AND employee_id = ?", bid.TenderID, employee.ID).First(&orgResponsible).Error; err != nil {
-			// Если пользователь не имеет прав ни как создатель, ни как ответственный за организацию, возвращаем 403
 			c.JSON(http.StatusForbidden, gin.H{"reason": "User is not authorized to access this bid"})
 			return
 		}
 	}
 
-	// Если пользователь имеет доступ, возвращаем статус предложения
-	c.JSON(http.StatusOK, gin.H{
-		"status": bid.Status,
-	})
+	c.JSON(http.StatusOK, bid.Status)
 }
 
 func UpdateBidStatus(c *gin.Context) {
@@ -285,20 +255,16 @@ func UpdateBidStatus(c *gin.Context) {
 		return
 	}
 
-	// Получение идентификатора предложения из параметров пути
 	bidID := c.Param("bidId")
 
-	// Проверка наличия bidID
 	if bidID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "Bid ID is required"})
 		return
 	}
 
-	// Получение обязательных параметров запроса: status и username
 	status := c.Query("status")
 	username := c.Query("username")
 
-	// Проверка обязательных параметров
 	if status == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "Status is required"})
 		return
@@ -309,7 +275,6 @@ func UpdateBidStatus(c *gin.Context) {
 		return
 	}
 
-	// Проверка допустимых значений статуса
 	validStatuses := map[string]bool{
 		"Created":   true,
 		"Published": true,
@@ -321,41 +286,33 @@ func UpdateBidStatus(c *gin.Context) {
 		return
 	}
 
-	// Проверка существования пользователя
 	var employee models.Employee
 	if err := database.First(&employee, "username = ?", username).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid or non-existent user"})
 		return
 	}
 
-	// Поиск предложения по ID
 	var bid models.Bid
 	if err := database.First(&bid, "id = ?", bidID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Bid not found"})
 		return
 	}
 
-	// Проверка прав доступа: пользователь должен быть создателем предложения
 	if bid.AuthorID != employee.ID {
-		// Проверка, является ли пользователь ответственным за организацию, к которой принадлежит предложение
 		var orgResponsible models.OrganizationResponsible
 		if err := database.Where("organization_id = ? AND employee_id = ?", bid.TenderID, employee.ID).First(&orgResponsible).Error; err != nil {
-			// Если пользователь не имеет прав ни как создатель, ни как ответственный за организацию, возвращаем 403
 			c.JSON(http.StatusForbidden, gin.H{"reason": "User is not authorized to update this bid"})
 			return
 		}
 	}
 
-	// Обновление статуса предложения
 	bid.Status = status
 
-	// Сохранение изменений в базе данных
 	if err := database.Save(&bid).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Failed to update bid status"})
 		return
 	}
 
-	// Формирование ответа
 	response := schemas.BidCreateResponse{
 		ID:         bid.ID,
 		Name:       bid.Name,
@@ -366,7 +323,6 @@ func UpdateBidStatus(c *gin.Context) {
 		CreatedAt:  bid.CreatedAt.Format(time.RFC3339),
 	}
 
-	// Возврат успешного ответа
 	c.JSON(http.StatusOK, response)
 }
 
@@ -376,7 +332,6 @@ func EditBid(c *gin.Context) {
 		return
 	}
 
-	// Получение идентификатора предложения и данных для обновления
 	bidID := c.Param("bidId")
 	var bidInput schemas.BidEditRequest
 	if err := c.ShouldBindJSON(&bidInput); err != nil {
@@ -384,14 +339,12 @@ func EditBid(c *gin.Context) {
 		return
 	}
 
-	// Проверка наличия предложения
 	var bid models.Bid
 	if err := database.First(&bid, "id = ?", bidID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Bid not found"})
 		return
 	}
 
-	// Проверка прав доступа
 	username := c.Query("username")
 	if username == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Username is required"})
@@ -409,9 +362,8 @@ func EditBid(c *gin.Context) {
 		return
 	}
 
-	// Сохранение текущей версии в BidHistory
 	history := models.BidHistory{
-		ID:          uuid.New(), // или другой метод генерации UUID
+		ID:          uuid.New(),
 		BidID:       bid.ID,
 		Name:        bid.Name,
 		Description: bid.Description,
@@ -425,7 +377,6 @@ func EditBid(c *gin.Context) {
 	}
 	database.Create(&history)
 
-	// Обновление предложения
 	bid.Name = bidInput.Name
 	bid.Description = bidInput.Description
 	bid.Version += 1
@@ -434,7 +385,6 @@ func EditBid(c *gin.Context) {
 		return
 	}
 
-	// Формирование ответа
 	response := schemas.BidCreateResponse{
 		ID:         bid.ID,
 		Name:       bid.Name,
@@ -453,7 +403,6 @@ func RollbackBid(c *gin.Context) {
 		return
 	}
 
-	// Получение идентификатора предложения, версии и username
 	bidID := c.Param("bidId")
 	versionStr := c.Param("version")
 	username := c.Query("username")
@@ -462,14 +411,12 @@ func RollbackBid(c *gin.Context) {
 		return
 	}
 
-	// Проверка наличия предложения
 	var bid models.Bid
 	if err := database.First(&bid, "id = ?", bidID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Bid not found"})
 		return
 	}
 
-	// Проверка прав доступа
 	var employee models.Employee
 	if err := database.First(&employee, "username = ?", username).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid or non-existent user"})
@@ -481,16 +428,14 @@ func RollbackBid(c *gin.Context) {
 		return
 	}
 
-	// Поиск записи в BidHistory по версии
 	var history models.BidHistory
 	if err := database.First(&history, "bid_id = ? AND version = ?", bidID, versionStr).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Version not found in history"})
 		return
 	}
 
-	// Инкрементирование версии и запись текущего состояния в BidHistory
 	currentHistory := models.BidHistory{
-		ID:          uuid.New(), // Новый UUID для истории
+		ID:          uuid.New(),
 		BidID:       bid.ID,
 		Name:        bid.Name,
 		Description: bid.Description,
@@ -507,15 +452,14 @@ func RollbackBid(c *gin.Context) {
 		return
 	}
 
-	// Обновление предложения на основе данных из BidHistory
 	bid.Name = history.Name
 	bid.Description = history.Description
 	bid.Status = history.Status
 	bid.TenderID = history.TenderID
 	bid.AuthorType = history.AuthorType
 	bid.AuthorID = history.AuthorID
-	bid.Version += 1           // Инкремент версии
-	bid.CreatedAt = time.Now() // Обновляем CreatedAt на текущее время
+	bid.Version += 1
+	bid.CreatedAt = time.Now()
 	bid.Decision = history.Decision
 
 	if err := database.Save(&bid).Error; err != nil {
@@ -523,7 +467,6 @@ func RollbackBid(c *gin.Context) {
 		return
 	}
 
-	// Формирование ответа
 	response := schemas.BidCreateResponse{
 		ID:         bid.ID,
 		Name:       bid.Name,
@@ -542,7 +485,6 @@ func SubmitDecision(c *gin.Context) {
 		return
 	}
 
-	// Получение идентификатора предложения, решения и username из query параметров
 	bidID := c.Param("bidId")
 	decision := c.Query("decision")
 	username := c.Query("username")
@@ -557,34 +499,29 @@ func SubmitDecision(c *gin.Context) {
 		return
 	}
 
-	// Проверка существования предложения
 	var bid models.Bid
 	if err := database.First(&bid, "id = ?", bidID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Bid not found"})
 		return
 	}
 
-	// Проверка существования пользователя
 	var employee models.Employee
 	if err := database.First(&employee, "username = ?", username).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid or non-existent user"})
 		return
 	}
 
-	// Проверка прав доступа: пользователь должен быть автором предложения
 	if bid.AuthorID != employee.ID {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "User is not authorized to submit decision for this bid"})
 		return
 	}
 
-	// Обновление предложения с учетом принятого решения
 	bid.Decision = &decision
 	if err := database.Save(&bid).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Failed to submit decision"})
 		return
 	}
 
-	// Формирование ответа
 	response := schemas.BidCreateResponse{
 		ID:         bid.ID,
 		Name:       bid.Name,
@@ -603,7 +540,6 @@ func SendFeedback(c *gin.Context) {
 		return
 	}
 
-	// Получение идентификатора предложения, отзыва и username из query параметров
 	bidID := c.Param("bidId")
 	feedback := c.Query("bidFeedback")
 	username := c.Query("username")
@@ -618,41 +554,35 @@ func SendFeedback(c *gin.Context) {
 		return
 	}
 
-	// Проверка длины отзыва
 	if len(feedback) > 1000 {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "Feedback exceeds maximum length of 1000 characters"})
 		return
 	}
 
-	// Проверка существования предложения
 	var bid models.Bid
 	if err := database.First(&bid, "id = ?", bidID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Bid not found"})
 		return
 	}
 
-	// Проверка существования тендера
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", bid.TenderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Tender not found"})
 		return
 	}
 
-	// Проверка существования пользователя
 	var employee models.Employee
 	if err := database.First(&employee, "username = ?", username).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid or non-existent user"})
 		return
 	}
 
-	// Проверка прав доступа: пользователь должен быть ответственным за организацию, связанную с тендером
 	var orgResp models.OrganizationResponsible
 	if err := database.First(&orgResp, "organization_id = ? AND employee_id = ?", tender.OrganizationID, employee.ID).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "User is not authorized to submit feedback for this bid"})
 		return
 	}
 
-	// Создание отзыва
 	feedbackRecord := models.BidFeedback{
 		BidID:     bid.ID,
 		Feedback:  feedback,
@@ -664,7 +594,6 @@ func SendFeedback(c *gin.Context) {
 		return
 	}
 
-	// Формирование ответа
 	response := schemas.BidCreateResponse{
 		ID:         bid.ID,
 		Name:       bid.Name,
@@ -683,14 +612,12 @@ func GetBidReviews(c *gin.Context) {
 		return
 	}
 
-	// Получение параметров из запроса
 	tenderID := c.Param("tenderId")
 	authorUsername := c.Query("authorUsername")
 	requesterUsername := c.Query("requesterUsername")
 	limitStr := c.DefaultQuery("limit", "5")
 	offsetStr := c.DefaultQuery("offset", "0")
 
-	// Проверка наличия обязательных параметров
 	if authorUsername == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "authorUsername is required"})
 		return
@@ -700,7 +627,6 @@ func GetBidReviews(c *gin.Context) {
 		return
 	}
 
-	// Преобразование limit и offset в int
 	limit, err := strconv.Atoi(limitStr)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": "Invalid limit value"})
@@ -712,34 +638,30 @@ func GetBidReviews(c *gin.Context) {
 		return
 	}
 
-	// Проверка существования пользователя-запрашивающего
 	var requesterEmployee models.Employee
 	if err := database.First(&requesterEmployee, "username = ?", requesterUsername).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Invalid or non-existent requester user"})
 		return
 	}
 
-	// Проверка существования тендера
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Tender not found"})
 		return
 	}
 
-	// Проверка, является ли requester ответственным за организацию
 	var organizationResponsible models.OrganizationResponsible
 	if err := database.First(&organizationResponsible, "organization_id = ? AND employee_id = ?", tender.OrganizationID, requesterEmployee.ID).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "Requester does not have permission to view reviews for this tender"})
 		return
 	}
 
-	// Проверка существования автора предложений
 	var authorEmployee models.Employee
 	if err := database.First(&authorEmployee, "username = ?", authorUsername).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "Invalid or non-existent author user"})
 		return
 	}
-	// Получение отзывов из таблицы bid_feedbacks для данного тендера и автора
+
 	var reviews []schemas.BidReviewResponse
 	if err := database.Table("bid_feedbacks").Select("id, feedback as description, created_at").
 		Where("bid_id IN (SELECT id FROM bids WHERE tender_id = ? AND author_id = ?)", tenderID, authorEmployee.ID).
@@ -748,12 +670,10 @@ func GetBidReviews(c *gin.Context) {
 		return
 	}
 
-	// Проверка наличия отзывов
 	if len(reviews) == 0 {
 		c.JSON(http.StatusNotFound, gin.H{"reason": "No reviews found"})
 		return
 	}
 
-	// Формирование ответа
 	c.JSON(http.StatusOK, reviews)
 }

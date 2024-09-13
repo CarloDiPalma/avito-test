@@ -7,7 +7,6 @@ import (
 	"github.com/google/uuid"
 )
 
-// Employee модель для таблицы employee
 type Employee struct {
 	ID        uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	Username  string    `gorm:"unique;not null"`
@@ -21,7 +20,6 @@ func (Employee) TableName() string {
 	return "employee"
 }
 
-// OrganizationType определяет тип организации
 type OrganizationType string
 
 const (
@@ -67,7 +65,6 @@ type Tender struct {
 	CreatedAt       time.Time `json:"createdAt"`
 }
 
-// ValidateServiceType проверяет, что значение ServiceType является одним из допустимых значений
 func ValidateServiceType(serviceType string) bool {
 	for _, v := range validServiceTypes {
 		if serviceType == v {

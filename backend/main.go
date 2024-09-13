@@ -25,14 +25,12 @@ func main() {
 		// postgresConn = "postgres://postgres:4824@localhost:5432/avito?sslmode=disable"
 	}
 	log.Println(postgresConn)
-	// Выполнение миграций
 	migrations.RunMigrations(postgresConn)
 	db, err := gorm.Open(postgres.Open(postgresConn), &gorm.Config{})
 	if err != nil {
 		log.Fatalf("Failed to connect to the database: %v", err)
 	}
 
-	// Инициализация и запуск сервера
 	r := gin.Default()
 
 	r.Use(cors.New(cors.Config{
@@ -42,13 +40,11 @@ func main() {
 		AllowCredentials: true,
 	}))
 
-	// Middleware для установки базы данных в контекст
 	r.Use(func(c *gin.Context) {
 		c.Set("db", db)
 		c.Next()
 	})
 
-	// Настройка маршрутов
 	routes.SetupRoutes(r, db)
 
 	serverAddress := os.Getenv("SERVER_ADDRESS")

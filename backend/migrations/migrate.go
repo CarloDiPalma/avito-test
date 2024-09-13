@@ -46,7 +46,6 @@ func RunMigrations(postgresConn string) {
 		log.Fatalf("Error creating type bid_decision: %v", err)
 	}
 
-	// Автоматическая миграция всех моделей
 	err = db.AutoMigrate(
 		// &models.Employee{},
 		// &models.Organization{},
@@ -64,7 +63,6 @@ func RunMigrations(postgresConn string) {
 	log.Println("Database migrated successfully")
 }
 
-// Функция для удаления таблиц
 func dropTables(db *gorm.DB) error {
 	tables := []string{
 		"tenders",

@@ -8,7 +8,6 @@ import (
 	"gorm.io/gorm"
 )
 
-// SetupRoutes инициализирует все маршруты
 func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 
 	router.GET("/api/ping", func(c *gin.Context) {
@@ -31,10 +30,9 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 			action := c.Param("action")
 
 			if action == "list" {
-				// Вызов GetBidsByTender без явного использования переменной tenderId
 				handlers.GetBidsByTender(c)
 			} else if action == "status" {
-				bidId := c.Param("tenderId") // Используем параметр как bidId для статуса
+				bidId := c.Param("tenderId")
 				c.Set("bidId", bidId)
 				handlers.GetBidStatus(c)
 			} else {
