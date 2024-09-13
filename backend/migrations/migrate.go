@@ -24,6 +24,22 @@ func RunMigrations(postgresConn string) {
 		log.Fatalf("Error creating type organization_type: %v", err)
 	}
 
+	// Создание расширения uuid-ossp, если оно не существует
+	err = db.Exec(`CREATE EXTENSION IF NOT EXISTS "uuid-ossp";`).Error
+	if err != nil {
+		log.Fatalf("Error creating extension uuid-ossp: %v", err)
+	}
+
+	// Создание типа данных bid_decision, если он не существует
+	err = db.Exec(`DO $$ BEGIN
+        IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'bid_decision') THEN
+            CREATE TYPE bid_decision AS ENUM ('Approved', 'Rejected');
+        END IF;
+    END $$`).Error
+	if err != nil {
+		log.Fatalf("Error creating type bid_decision: %v", err)
+	}
+
 	// Автоматическая миграция всех моделей
 	err = db.AutoMigrate(
 		&models.Employee{},
