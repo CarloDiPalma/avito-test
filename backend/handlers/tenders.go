@@ -244,7 +244,10 @@ func UpdateTender(c *gin.Context) {
 		CreatedAt:       tender.CreatedAt,
 	}
 
-	database.Create(&history)
+	if err := database.Create(&history).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Failed to save tender history"})
+		return
+	}
 
 	var updateRequest schemas.TenderUpdateRequest
 	if err := c.ShouldBindJSON(&updateRequest); err != nil {

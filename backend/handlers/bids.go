@@ -68,7 +68,7 @@ func CreateBid(c *gin.Context) {
 		AuthorType:  bidInput.AuthorType,
 		AuthorID:    employee.ID,
 		Version:     1,
-		Status:      "CREATED",
+		Status:      "Created",
 		CreatedAt:   time.Now(),
 	}
 
