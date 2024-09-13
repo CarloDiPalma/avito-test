@@ -671,7 +671,7 @@ func GetBidReviews(c *gin.Context) {
 
 	var reviews []schemas.BidReviewResponse
 	if err := database.Table("bid_feedback").Select("id, feedback as description, created_at").
-		Where("bid_id IN (SELECT id FROM bid WHERE tender_id = ? AND author_id = ?)", tenderID, authorEmployee.ID).
+		Where("author_id = ?", authorEmployee.ID).
 		Limit(limit).Offset(offset).Find(&reviews).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Error retrieving reviews"})
 		return
