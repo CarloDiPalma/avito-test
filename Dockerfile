@@ -1,15 +1,27 @@
-FROM gradle:4.7.0-jdk8-alpine AS build
-COPY --chown=gradle:gradle . /home/gradle/src
-WORKDIR /home/gradle/src
-RUN gradle build --no-daemon 
+FROM golang:1.22-alpine AS builder
 
-FROM openjdk:8-jre-slim
+WORKDIR /app
+
+COPY ./backend /app
+
+RUN go mod tidy
+RUN go build -o main .
+
+FROM alpine:latest
+
+WORKDIR /root/
+
+
+COPY --from=builder /app/main .
+
+ENV SERVER_ADDRESS=0.0.0.0:8080
+ENV POSTGRES_CONN=postgres://cnrprod1725742191-team-77945:cnrprod1725742191-team-77945@rc1b-5xmqy6bq501kls4m.mdb.yandexcloud.net:6432/cnrprod1725742191-team-77945?target_session_attrs=read-write
+ENV POSTGRES_USERNAME=cnrprod1725742191-team-77945
+ENV POSTGRES_PASSWORD=cnrprod1725742191-team-77945
+ENV POSTGRES_HOST=rc1b-5xmqy6bq501kls4m.mdb.yandexcloud.net
+ENV POSTGRES_PORT=6432
+ENV POSTGRES_DATABASE=cnrprod1725742191-team-77945
 
 EXPOSE 8080
 
-RUN mkdir /app
-
-COPY --from=build /home/gradle/src/build/libs/*.jar /app/spring-boot-application.jar
-
-ENTRYPOINT ["java", "-XX:+UnlockExperimentalVMOptions", "-XX:+UseCGroupMemoryLimitForHeap", "-Djava.security.egd=file:/dev/./urandom","-jar","/app/spring-boot-application.jar"]
-
+CMD ["./main"]
