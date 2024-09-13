@@ -511,7 +511,14 @@ func SubmitDecision(c *gin.Context) {
 		return
 	}
 
-	if bid.AuthorID != employee.ID {
+	var tender models.Tender
+	if err := database.First(&tender, "id = ?", bid.TenderID).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"reason": "Tender not found"})
+		return
+	}
+
+	var organizationResponsible models.OrganizationResponsible
+	if err := database.First(&organizationResponsible, "organization_id = ? AND user_id = ?", tender.OrganizationID, employee.ID).Error; err != nil {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "User is not authorized to submit decision for this bid"})
 		return
 	}
