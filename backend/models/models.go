@@ -102,7 +102,6 @@ type TenderHistory struct {
 	CreatorUsername string    `json:"creator_username"`
 	OrganizationID  uuid.UUID `gorm:"type:uuid" json:"organization_id"`
 	CreatedAt       time.Time `json:"created_at"`
-	UpdatedAt       time.Time `json:"updated_at"`
 }
 
 func (TenderHistory) TableName() string {

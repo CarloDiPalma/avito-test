@@ -15,10 +15,10 @@ func RunMigrations(postgresConn string) {
 	}
 
 	// Удаление таблиц перед миграцией
-	err = dropTables(db)
-	if err != nil {
-		log.Fatalf("Error dropping tables: %v", err)
-	}
+	// err = dropTables(db)
+	// if err != nil {
+	// 	log.Fatalf("Error dropping tables: %v", err)
+	// }
 
 	// Создание типа данных organization_type, если он не существует
 	err = db.Exec(`DO $$ BEGIN

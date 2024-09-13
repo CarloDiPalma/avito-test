@@ -231,6 +231,21 @@ func UpdateTender(c *gin.Context) {
 		return
 	}
 
+	history := models.TenderHistory{
+		ID:              uuid.New(),
+		TenderID:        tender.ID,
+		Name:            tender.Name,
+		Description:     tender.Description,
+		ServiceType:     tender.ServiceType,
+		Status:          tender.Status,
+		Version:         tender.Version,
+		CreatorUsername: tender.CreatorUsername,
+		OrganizationID:  tender.OrganizationID,
+		CreatedAt:       tender.CreatedAt,
+	}
+
+	database.Create(&history)
+
 	var updateRequest schemas.TenderUpdateRequest
 	if err := c.ShouldBindJSON(&updateRequest); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"reason": err.Error()})
