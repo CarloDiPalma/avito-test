@@ -1,16 +1,18 @@
-package controllers
+package handlers
 
 import (
 	"ZADANIE-6105/models"
+	"ZADANIE-6105/utils"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"gorm.io/gorm"
 )
 
 func CreateEmployee(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	var employee models.Employee
 	if err := c.ShouldBindJSON(&employee); err != nil {

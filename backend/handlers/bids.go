@@ -1,8 +1,9 @@
-package controllers
+package handlers
 
 import (
 	"ZADANIE-6105/models"
 	"ZADANIE-6105/schemas"
+	"ZADANIE-6105/utils"
 
 	"net/http"
 	"strconv"
@@ -14,8 +15,10 @@ import (
 )
 
 func CreateBid(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Входные данные с использованием схемы BidCreateRequest
 	var bidInput schemas.BidCreateRequest
@@ -94,8 +97,10 @@ func CreateBid(c *gin.Context) {
 }
 
 func GetMyBids(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение username из query
 	username := c.Query("username")
@@ -147,8 +152,10 @@ func GetMyBids(c *gin.Context) {
 }
 
 func GetBidsByTender(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение идентификатора тендера из параметров запроса
 	tenderID := c.Param("tenderId")
@@ -220,8 +227,10 @@ func GetBidsByTender(c *gin.Context) {
 }
 
 func GetBidStatus(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение идентификатора предложения из параметров запроса
 	bidID := c.GetString("bidId")
@@ -271,8 +280,10 @@ func GetBidStatus(c *gin.Context) {
 }
 
 func UpdateBidStatus(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение идентификатора предложения из параметров пути
 	bidID := c.Param("bidId")
@@ -360,8 +371,10 @@ func UpdateBidStatus(c *gin.Context) {
 }
 
 func EditBid(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение идентификатора предложения и данных для обновления
 	bidID := c.Param("bidId")
@@ -435,8 +448,10 @@ func EditBid(c *gin.Context) {
 }
 
 func RollbackBid(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение идентификатора предложения, версии и username
 	bidID := c.Param("bidId")
@@ -522,8 +537,10 @@ func RollbackBid(c *gin.Context) {
 }
 
 func SubmitDecision(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение идентификатора предложения, решения и username из query параметров
 	bidID := c.Param("bidId")
@@ -581,8 +598,10 @@ func SubmitDecision(c *gin.Context) {
 }
 
 func SendFeedback(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение идентификатора предложения, отзыва и username из query параметров
 	bidID := c.Param("bidId")
@@ -659,8 +678,10 @@ func SendFeedback(c *gin.Context) {
 }
 
 func GetBidReviews(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получение параметров из запроса
 	tenderID := c.Param("tenderId")

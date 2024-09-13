@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"ZADANIE-6105/controllers"
+	"ZADANIE-6105/handlers"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -17,35 +17,35 @@ func SetupRoutes(router *gin.Engine, db *gorm.DB) {
 
 	api := router.Group("/api")
 	{
-		api.POST("/tenders/new", controllers.CreateTender)
-		api.GET("/tenders", controllers.GetTenders)
-		api.GET("/tenders/my", controllers.GetUserTenders)
-		api.POST("/employees/new", controllers.CreateEmployee)
-		api.PATCH("/tenders/:tenderId/edit", controllers.UpdateTender)
-		api.GET("/tenders/:tenderId/status", controllers.GetTenderStatus)
-		api.PUT("/tenders/:tenderId/status", controllers.UpdateTenderStatus)
-		api.PUT("/tenders/:tenderId/rollback/:version", controllers.RollbackTender)
-		api.POST("/bids/new", controllers.CreateBid)
-		api.GET("/bids/my", controllers.GetMyBids)
+		api.POST("/tenders/new", handlers.CreateTender)
+		api.GET("/tenders", handlers.GetTenders)
+		api.GET("/tenders/my", handlers.GetUserTenders)
+		api.POST("/employees/new", handlers.CreateEmployee)
+		api.PATCH("/tenders/:tenderId/edit", handlers.UpdateTender)
+		api.GET("/tenders/:tenderId/status", handlers.GetTenderStatus)
+		api.PUT("/tenders/:tenderId/status", handlers.UpdateTenderStatus)
+		api.PUT("/tenders/:tenderId/rollback/:version", handlers.RollbackTender)
+		api.POST("/bids/new", handlers.CreateBid)
+		api.GET("/bids/my", handlers.GetMyBids)
 		api.GET("/bids/:tenderId/:action", func(c *gin.Context) {
 			action := c.Param("action")
 
 			if action == "list" {
 				// Вызов GetBidsByTender без явного использования переменной tenderId
-				controllers.GetBidsByTender(c)
+				handlers.GetBidsByTender(c)
 			} else if action == "status" {
 				bidId := c.Param("tenderId") // Используем параметр как bidId для статуса
 				c.Set("bidId", bidId)
-				controllers.GetBidStatus(c)
+				handlers.GetBidStatus(c)
 			} else {
 				c.JSON(404, gin.H{"reason": "Not found"})
 			}
 		})
-		api.PUT("/bids/:bidId/status", controllers.UpdateBidStatus)
-		api.PATCH("/bids/:bidId/edit", controllers.EditBid)
-		api.PUT("/bids/:bidId/rollback/:version", controllers.RollbackBid)
-		api.PUT("/bids/:bidId/submit_decision", controllers.SubmitDecision)
-		api.PUT("/bids/:bidId/feedback", controllers.SendFeedback)
-		api.GET("/bids/:tenderId/reviews", controllers.GetBidReviews)
+		api.PUT("/bids/:bidId/status", handlers.UpdateBidStatus)
+		api.PATCH("/bids/:bidId/edit", handlers.EditBid)
+		api.PUT("/bids/:bidId/rollback/:version", handlers.RollbackBid)
+		api.PUT("/bids/:bidId/submit_decision", handlers.SubmitDecision)
+		api.PUT("/bids/:bidId/feedback", handlers.SendFeedback)
+		api.GET("/bids/:tenderId/reviews", handlers.GetBidReviews)
 	}
 }

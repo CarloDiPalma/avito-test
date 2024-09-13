@@ -37,8 +37,8 @@ type Organization struct {
 
 type OrganizationResponsible struct {
 	ID             uuid.UUID `gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
-	OrganizationID uuid.UUID `gorm:"type:uuid;not null" gorm:"foreignKey:OrganizationID"`
-	EmployeeID     uuid.UUID `gorm:"type:uuid;not null" gorm:"foreignKey:EmployeeID"`
+	OrganizationID uuid.UUID `gorm:"type:uuid;not null;foreignKey:OrganizationID"`
+	EmployeeID     uuid.UUID `gorm:"type:uuid;not null;foreignKey:EmployeeID"`
 }
 
 var validServiceTypes = []string{"Construction", "Delivery", "Manufacture"}
@@ -65,12 +65,16 @@ func ValidateServiceType(serviceType string) bool {
 	return false
 }
 
-// Валидация модели
 func (t *Tender) Validate() error {
 	validate := validator.New()
-	validate.RegisterValidation("oneof", func(fl validator.FieldLevel) bool {
+	err := validate.RegisterValidation("oneof", func(fl validator.FieldLevel) bool {
 		return ValidateServiceType(fl.Field().String())
 	})
+
+	if err != nil {
+		return err
+	}
+
 	return validate.Struct(t)
 }
 

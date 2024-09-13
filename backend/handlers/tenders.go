@@ -1,8 +1,9 @@
-package controllers
+package handlers
 
 import (
 	"ZADANIE-6105/models"
 	"ZADANIE-6105/schemas"
+	"ZADANIE-6105/utils"
 	"net/http"
 	"strconv"
 	"time"
@@ -24,7 +25,7 @@ func CreateTender(c *gin.Context) {
 
 	// Извлечение данных из тела запроса
 	if err := c.ShouldBindJSON(&tender); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"reason": err.Error()})
 		return
 	}
 
@@ -34,8 +35,10 @@ func CreateTender(c *gin.Context) {
 		return
 	}
 
-	// Получите доступ к базе данных
-	db := c.MustGet("db").(*gorm.DB)
+	db, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Получите ID сотрудника по имени пользователя
 	var employee models.Employee
@@ -52,12 +55,12 @@ func CreateTender(c *gin.Context) {
 	}
 
 	if err := tender.Validate(); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"reason": err.Error()})
 		return
 	}
 
 	if err := db.Create(&tender).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create tender"})
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Failed to create tender"})
 		return
 	}
 
@@ -75,7 +78,10 @@ func CreateTender(c *gin.Context) {
 }
 
 func GetTenders(c *gin.Context) {
-	db := c.MustGet("db").(*gorm.DB)
+	db, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Определите допустимые значения для service_type
 	validServiceTypes := map[string]bool{
@@ -92,7 +98,7 @@ func GetTenders(c *gin.Context) {
 	// Проверка на валидность значений service_type
 	for _, st := range serviceTypes {
 		if !validServiceTypes[st] {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid service_type value"})
+			c.JSON(http.StatusBadRequest, gin.H{"reason": "Invalid service_type value"})
 			return
 		}
 	}
@@ -121,7 +127,7 @@ func GetTenders(c *gin.Context) {
 	query = query.Order("name ASC").Limit(limit).Offset(offset)
 
 	if err := query.Find(&tenders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": err.Error()})
 		return
 	}
 
@@ -142,7 +148,10 @@ func GetTenders(c *gin.Context) {
 }
 
 func GetUserTenders(c *gin.Context) {
-	db := c.MustGet("db").(*gorm.DB)
+	db, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Извлечение параметра username из query
 	username := c.Query("username")
@@ -184,7 +193,7 @@ func GetUserTenders(c *gin.Context) {
 	query = query.Order("name ASC").Limit(limit).Offset(offset)
 
 	if err := query.Find(&tenders).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": err.Error()})
 		return
 	}
 
@@ -201,36 +210,52 @@ func GetUserTenders(c *gin.Context) {
 		})
 	}
 
+	if len(responses) == 0 {
+		c.JSON(http.StatusNotFound, gin.H{"reason": "No tenders found"})
+		return
+	}
+
 	c.JSON(http.StatusOK, responses)
 }
 
 func UpdateTender(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 	tenderID := c.Param("tenderId")
 
 	// Поиск тендера по ID
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", tenderID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Tender not found"})
+		c.JSON(http.StatusNotFound, gin.H{"reason": "Tender not found"})
 		return
 	}
 
 	// Проверка имени пользователя
 	username := c.Query("username")
 	if username == "" {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "username is required"})
+		c.JSON(http.StatusUnauthorized, gin.H{"reason": "username is required"})
 		return
 	}
+
+	// Проверка существования пользователя в таблице employees
+	var employee models.Employee
+	if err := database.First(&employee, "username = ?", username).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"reason": "User not found"})
+		return
+	}
+
+	// Проверка прав доступа
 	if tender.CreatorUsername != username {
-		c.JSON(http.StatusForbidden, gin.H{"error": "Unauthorized to update this tender"})
+		c.JSON(http.StatusForbidden, gin.H{"reason": "Unauthorized to update this tender"})
 		return
 	}
 
 	// Валидация запроса
 	var updateRequest schemas.TenderUpdateRequest
 	if err := c.ShouldBindJSON(&updateRequest); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"reason": err.Error()})
 		return
 	}
 
@@ -248,7 +273,7 @@ func UpdateTender(c *gin.Context) {
 
 	// Сохранение обновленного тендера
 	if err := database.Save(&tender).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender"})
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Failed to update tender"})
 		return
 	}
 
@@ -264,8 +289,10 @@ func UpdateTender(c *gin.Context) {
 }
 
 func GetTenderStatus(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 	tenderID := c.Param("tenderId")
 	username := c.Query("username")
 
@@ -300,8 +327,10 @@ func GetTenderStatus(c *gin.Context) {
 }
 
 func UpdateTenderStatus(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 	tenderID := c.Param("tenderId")
 
 	// Поиск тендера по ID
@@ -311,9 +340,22 @@ func UpdateTenderStatus(c *gin.Context) {
 		return
 	}
 
-	// Проверка прав доступа
+	// Проверка параметра username
 	username := c.Query("username")
-	if username != "" && tender.CreatorUsername != username {
+	if username == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"reason": "Username is required"})
+		return
+	}
+
+	// Проверка существования пользователя в таблице employees
+	var employee models.Employee
+	if err := database.First(&employee, "username = ?", username).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"reason": "User not found"})
+		return
+	}
+
+	// Проверка прав доступа
+	if tender.CreatorUsername != username {
 		c.JSON(http.StatusForbidden, gin.H{"reason": "Unauthorized to update this tender"})
 		return
 	}
@@ -348,8 +390,10 @@ func UpdateTenderStatus(c *gin.Context) {
 }
 
 func RollbackTender(c *gin.Context) {
-	db, _ := c.Get("db")
-	database := db.(*gorm.DB)
+	database, ok := utils.GetDB(c)
+	if !ok {
+		return
+	}
 
 	// Валидация параметров URI
 	var uriParams struct {
@@ -359,14 +403,14 @@ func RollbackTender(c *gin.Context) {
 	if err := c.ShouldBindUri(&uriParams); err != nil {
 		// Проверка ошибки, связанной с длиной tenderId или версией
 		if len(uriParams.TenderID) > 100 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "TenderID cannot be longer than 100 characters"})
+			c.JSON(http.StatusBadRequest, gin.H{"reason": "TenderID cannot be longer than 100 characters"})
 			return
 		}
 		if uriParams.TenderVersion < 1 {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "Version must be greater than 0"})
+			c.JSON(http.StatusBadRequest, gin.H{"reason": "Version must be greater than 0"})
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"reason": err.Error()})
 		return
 	}
 
@@ -375,7 +419,7 @@ func RollbackTender(c *gin.Context) {
 		Username string `form:"username" binding:"required"`
 	}
 	if err := c.ShouldBindQuery(&queryParams); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"reason": err.Error()})
 		return
 	}
 
@@ -389,7 +433,7 @@ func RollbackTender(c *gin.Context) {
 	// Поиск тендера по ID
 	var tender models.Tender
 	if err := database.First(&tender, "id = ?", uriParams.TenderID).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Tender not found"})
+		c.JSON(http.StatusNotFound, gin.H{"reason": "Tender not found"})
 		return
 	}
 
@@ -420,7 +464,7 @@ func RollbackTender(c *gin.Context) {
 	}
 
 	if err := database.Create(&currentHistory).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to save current tender history"})
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Failed to save current tender history"})
 		return
 	}
 
@@ -433,7 +477,7 @@ func RollbackTender(c *gin.Context) {
 
 	// Сохранение обновленного тендера
 	if err := database.Save(&tender).Error; err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update tender"})
+		c.JSON(http.StatusInternalServerError, gin.H{"reason": "Failed to update tender"})
 		return
 	}
 

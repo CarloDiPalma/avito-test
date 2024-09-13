@@ -1,0 +1,40 @@
+linters-settings:
+  govet:
+    check-shadowing: true # Проверка на переменные, скрывающие другие
+  errcheck:
+    check-type-assertions: true # Проверка на игнорирование ошибок при приведении типов
+  staticcheck:
+    checks: ["all"] # Включение всех проверок Staticcheck
+
+run:
+  timeout: 5m # Максимальное время выполнения проверки
+  tests: true # Включение линтинга тестов
+  skip-dirs:
+    - vendor # Пропустить директорию vendor
+  skip-files:
+    - ".*_generated.go" # Пропустить сгенерированные файлы
+  
+issues:
+  max-issues-per-linter: 0 # Нет ограничения на количество проблем на один линтер
+  max-same-issues: 3 # Максимум 3 одинаковые проблемы
+  exclude-use-default: false # Не использовать стандартные исключения
+  exclude:
+    - "error return value not checked" # Исключить определенные ошибки
+  include:
+    - ".*TODO.*" # Проверка наличия комментариев TODO
+
+linters:
+  enable:
+    - govet
+    - errcheck
+    - staticcheck
+    - gocyclo # Проверка сложности цикла
+    - gofmt # Проверка форматирования
+  disable:
+    - goconst # Отключение проверки констант
+    - maligned # Отключение проверки выравнивания структур
+
+output:
+  format: colored-line-number # Цветной вывод ошибок с указанием строки
+  print-issued-lines: true # Показать проблемные строки кода
+  uniq-by-line: true # Объединять одинаковые проблемы на одной строке
